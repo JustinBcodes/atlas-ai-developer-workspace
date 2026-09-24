@@ -1,0 +1,45 @@
+services:
+  web:
+    build: .
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on: [api]
+  api:
+    build: ./backend
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: postgresql://atlas:atlas@postgres:5432/atlas
+      REDIS_URL: redis://redis:6379/0
+      WEB_ORIGIN: http://localhost:3000
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+  worker:
+    build: ./backend
+    command: ["python", "worker.py"]
+    environment:
+      DATABASE_URL: postgresql://atlas:atlas@postgres:5432/atlas
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas
+      POSTGRES_DB: atlas
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas"]
+      interval: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      retries: 20
+volumes:
+  pgdata:
