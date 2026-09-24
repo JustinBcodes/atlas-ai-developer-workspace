@@ -108,7 +108,7 @@ def imports(path: str, content: str):
     if path.endswith(".py"):
         try:
             tree = ast.parse(content)
-            return list(dict.fromkeys(n.module or n.names[0].name for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))))[:100]
+            return list(dict.fromkeys((n.module or n.names[0].name) if isinstance(n, ast.ImportFrom) else n.names[0].name for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))))[:100]
         except SyntaxError:
             return []
     pattern = r"(?:import\s+.*?\s+from\s+|require\(|from\s+)[\"']([^\"']+)"
